@@ -6,13 +6,36 @@ class CanvasDrawer{
         this.node.height = height;
         this.node.style = style;
         this.drawing = false;
-        this.node.addEventListener("pointerdown", this.penDown.bind(this));
-        this.node.addEventListener("pointerout", this.penUp.bind(this));
-        this.node.addEventListener("pointerup", this.penUp.bind(this));
-        this.node.addEventListener("pointermove", this.draw.bind(this));
+        this.mob = this.detectMob();
+        if(!this.mob){
+            this.node.addEventListener("pointerdown", this.penDown.bind(this));
+            this.node.addEventListener("pointerout", this.penUp.bind(this));
+            this.node.addEventListener("pointerup", this.penUp.bind(this));
+            this.node.addEventListener("pointermove", this.draw.bind(this));
+        }
+        else{
+            this.node.addEventListener("touchstart", this.penDown.bind(this));
+            this.node.addEventListener("touchcancel", this.penUp.bind(this));
+            this.node.addEventListener("touchend", this.penUp.bind(this));
+            this.node.addEventListener("touchmove", this.draw.bind(this));
+        }
         this.context.lineWidth = params.lineWidth;
         this.context.lineCap = params.lineCap;
         this.context.strokeStyle = params.strokeStyle;
+    }
+    detectMob() {
+        const toMatch = [
+            /Android/i,
+            /webOS/i,
+            /iPhone/i,
+            /iPad/i,
+            /iPod/i,
+            /BlackBerry/i,
+            /Windows Phone/i
+        ];
+        return toMatch.some((toMatchItem) => {
+            return navigator.userAgent.match(toMatchItem);
+        });
     }
     penDown(e){
         this.drawing = true;
@@ -25,10 +48,20 @@ class CanvasDrawer{
     draw(e){
         if(!this.drawing)
             return;
-        this.context.lineTo(e.clientX, e.clientY);
-        this.context.stroke();
-        this.context.beginPath();
-        this.context.moveTo(e.clientX, e.clientY);
+        if(this.mob){
+            try {
+                this.context.lineTo(e.touches[0].clientX, e.touches[0].clientY);
+                this.context.stroke();
+                this.context.beginPath();
+                this.context.moveTo(e.touches[0].clientX, e.touches[0].clientY);
+            } catch (error) {}
+        }
+        else{
+            this.context.lineTo(e.clientX, e.clientY);
+            this.context.stroke();
+            this.context.beginPath();
+            this.context.moveTo(e.clientX, e.clientY);
+        }
     }
     convertToImage(){
         this.img = this.node.toDataURL("image/png").replace("image/png", "image/octet-stream");
